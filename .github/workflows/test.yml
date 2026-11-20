@@ -26,17 +26,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Pixi
+        uses: prefix-dev/setup-pixi@v0.11.2
         with:
-          python-version: "3.14"
-
-      - name: Install pre-commit
-        run: |
-          pip install pre-commit==4.6.2
+          pixi-version: v0.82.0
+          environments: default
+          cache: true
+          locked: true
       - name: Run pre-commit checks
-        run: |
-          pre-commit run --all-files --show-diff-on-failure
+        run: pixi run --locked lint
 
   testing:
     needs: linting
@@ -48,6 +46,8 @@ jobs:
 
           # Windows env with numpy, scipy,MKL installed through conda-forge
           - name: pylatest_conda_forge_mkl
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-forge-mkl
             os: windows-latest
             # TODO: revert to "*" once OpenCV can be imported with Python 3.15
             # on Windows. See
@@ -58,6 +58,8 @@ jobs:
             INSTALL_OPENCV: "true"
           # Windows env with numpy, scipy, OpenBLAS installed through conda-forge
           - name: pylatest_conda_forge_openblas
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-forge-openblas
             os: windows-latest
             # TODO: revert to "*" once OpenCV can be imported with Python 3.15
             # on Windows. See
@@ -68,12 +70,16 @@ jobs:
             INSTALL_OPENCV: "true"
           # Windows env with numpy, scipy installed through conda default channel
           - name: py311_conda
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: py311-conda
             os: windows-latest
             PYTHON_VERSION: "3.11"
             PACKAGER: "conda"
             INSTALL_OPENCV: "true"
           # Windows env with numpy, scipy installed through pip
           - name: py310_pip
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: py310-pip
             os: windows-latest
             PYTHON_VERSION: "3.10"
             PACKAGER: "pip"
@@ -81,6 +87,8 @@ jobs:
 
           # MacOS env with OpenMP installed through homebrew
           - name: py310_conda_homebrew_libomp
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: py310-conda-homebrew-libomp
             os: macos-latest
             PYTHON_VERSION: "3.10"
             PACKAGER: "conda"
@@ -92,6 +100,8 @@ jobs:
 
           # MacOS env with OpenBLAS and OpenMP installed through conda-forge compilers
           - name: pylatest_conda_forge_clang_openblas
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-forge-clang-openblas
             os: macos-latest
             PYTHON_VERSION: "*"
             PACKAGER: "conda-forge"
@@ -101,14 +111,18 @@ jobs:
 
           # MacOS env with FlexiBLAS
           - name: pylatest_flexiblas
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: macos-pylatest-flexiblas
             os: macos-latest
             PYTHON_VERSION: "*"
             INSTALL_BLAS: "flexiblas"
             PLATFORM_SPECIFIC_PACKAGES: "llvm-openmp"
 
           # Linux environments to test that packages that comes with Ubuntu 22.04
-          # are correctly handled.
+          # are correctly handled. These stay on the distro interpreter: the
+          # packages under test are apt packages, not a conda environment.
           - name: py310_ubuntu_atlas_gcc_gcc
+            USE_PIXI: false
             os: ubuntu-22.04
             PYTHON_VERSION: "3.10"
             PACKAGER: "ubuntu"
@@ -116,6 +130,7 @@ jobs:
             CC_OUTER_LOOP: "gcc"
             CC_INNER_LOOP: "gcc"
           - name: py310_ubuntu_openblas_gcc_gcc
+            USE_PIXI: false
             os: ubuntu-22.04
             PYTHON_VERSION: "3.10"
             PACKAGER: "ubuntu"
@@ -125,6 +140,8 @@ jobs:
 
           # Linux environment with development versions of numpy and scipy
           - name: pylatest_pip_dev
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-pip-dev
             os : ubuntu-latest
             PACKAGER: "pip-dev"
             PYTHON_VERSION: "*"
@@ -134,6 +151,8 @@ jobs:
 
           # Linux + Python 3.10 and homogeneous runtime nesting.
           - name: py310_conda_openblas_clang_clang
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: py310-conda-openblas-clang-clang
             os: ubuntu-latest
             PACKAGER: "conda"
             PYTHON_VERSION: "3.10"
@@ -145,6 +164,8 @@ jobs:
           # Linux environment with MKL and Clang (known to be unsafe for
           # threadpoolctl) to only test the warning from multiple OpenMP.
           - name: pylatest_conda_mkl_clang_gcc
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-mkl-clang-gcc
             os: ubuntu-latest
             PYTHON_VERSION: "*"
             PACKAGER: "conda"
@@ -154,6 +175,8 @@ jobs:
             TESTS: "libomp_libiomp_warning"
           # Linux environment with MKL, safe for threadpoolctl.
           - name: pylatest_conda_mkl_gcc_gcc
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-mkl-gcc-gcc
             os: ubuntu-latest
             PYTHON_VERSION: "*"
             PACKAGER: "conda"
@@ -166,6 +189,8 @@ jobs:
           # Linux + Python 3.11 with numpy / scipy installed with pip from PyPI
           # and heterogeneous OpenMP runtimes.
           - name: py311_pip_openblas_gcc_clang
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: py311-pip-openblas-gcc-clang
             os: ubuntu-latest
             PACKAGER: "pip"
             PYTHON_VERSION: "3.11"
@@ -174,6 +199,8 @@ jobs:
           # Linux + conda-forge Python RC, extra deps from PyPI.
           # OpenCV is omitted: no wheels for the current RC ABI yet.
           - name: pyrc_pip
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pyrc-pip
             os: ubuntu-latest
             PACKAGER: "pip"
             # Using the "*" marker does not select the latest RC release
@@ -185,6 +212,8 @@ jobs:
             CC_INNER_LOOP: "gcc"
           # Linux + conda-forge free-threaded Python RC, extra deps from PyPI.
           - name: pyrc_ft_pip
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pyrc-ft-pip
             os: ubuntu-latest
             PACKAGER: "pip"
             # Using the "*" marker does not select the latest RC release
@@ -197,6 +226,8 @@ jobs:
             CC_INNER_LOOP: "gcc"
           # Linux environment with numpy from conda-forge channel and openblas-openmp
           - name: pylatest_conda_forge
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-forge
             os: ubuntu-latest
             PACKAGER: "conda-forge"
             PYTHON_VERSION: "*"
@@ -207,6 +238,8 @@ jobs:
             CC_INNER_LOOP: "gcc"
           # Linux environment with no numpy and heterogeneous OpenMP runtimes.
           - name: pylatest_conda_nonumpy_gcc_clang
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-conda-nonumpy-gcc-clang
             os: ubuntu-latest
             PACKAGER: "conda"
             PYTHON_VERSION: "*"
@@ -216,6 +249,8 @@ jobs:
 
           # Linux environments with numpy linked to BLIS
           - name: pylatest_blis_gcc_clang_openmp
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-blis-gcc-clang-openmp
             os: ubuntu-latest
             PYTHON_VERSION: "*"
             INSTALL_BLAS: "blis"
@@ -225,6 +260,8 @@ jobs:
             BLIS_CC: "clang-18"
             BLIS_ENABLE_THREADING: "openmp"
           - name: pylatest_blis_clang_gcc_pthreads
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-blis-clang-gcc-pthreads
             os: ubuntu-latest
             PYTHON_VERSION: "*"
             INSTALL_BLAS: "blis"
@@ -234,6 +271,8 @@ jobs:
             BLIS_CC: "gcc-12"
             BLIS_ENABLE_THREADING: "pthreads"
           - name: pylatest_blis_no_threading
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: pylatest-blis-no-threading
             os: ubuntu-latest
             PYTHON_VERSION: "*"
             INSTALL_BLAS: "blis"
@@ -245,6 +284,8 @@ jobs:
 
           # Linux env with FlexiBLAS
           - name: pylatest_flexiblas
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: linux-pylatest-flexiblas
             os: ubuntu-latest
             PYTHON_VERSION: "*"
             INSTALL_BLAS: "flexiblas"
@@ -254,6 +295,8 @@ jobs:
 
           # Python 3.14, free-threaded
           - name: py314_freethreaded_pip_openblas
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: py314-freethreaded-pip-openblas
             os: ubuntu-latest
             PACKAGER: "conda-forge"
             BLAS: "openblas"
@@ -265,6 +308,8 @@ jobs:
           # Ubuntu 24.04, which has glibc with different dl_iterate_phdr than
           # latest Ubuntus.
           - name: ubuntu24_04
+            USE_PIXI: true
+            PIXI_ENVIRONMENT: ubuntu24-04
             os: ubuntu-24.04
             PACKAGER: "conda-forge"
             BLAS: "openblas"
@@ -278,9 +323,9 @@ jobs:
 
     defaults:
       run:
-        # Need to use this shell to get conda working properly.
-        # See https://github.com/marketplace/actions/setup-miniconda#important
-        shell: 'bash -el {0}'
+        # Bash, including on Windows, so the CI scripts run unchanged.
+        # Do not use a login shell: nested login shells break PATH on macOS.
+        shell: "bash -e {0}"
 
 
     steps:
@@ -296,20 +341,28 @@ jobs:
           restore-keys: |
             ccache-flexiblas-${{ matrix.os }}-
 
-      - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Pixi
+        if: matrix.USE_PIXI
+        uses: prefix-dev/setup-pixi@v0.11.2
         with:
-          auto-activate-base: true
-          auto-update-conda: true
-          miniforge-version: latest
+          pixi-version: v0.82.0
+          environments: ${{ matrix.PIXI_ENVIRONMENT }}
+          cache: true
+          locked: true
 
       - name: Install dependencies
+        if: ${{ !matrix.USE_PIXI }}
         run: |
           ./continuous_integration/install.sh
 
       - name: Test library
+        if: ${{ !matrix.USE_PIXI }}
         run: |
           ./continuous_integration/run_tests.sh
+
+      - name: Run tests
+        if: matrix.USE_PIXI
+        run: pixi run --locked --environment ${{ matrix.PIXI_ENVIRONMENT }} test
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

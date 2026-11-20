@@ -68,7 +68,31 @@ make_conda() {
 }
 
 
-if [[ "$PACKAGER" == "conda" ]]; then
+if [[ -n "${PIXI_ENVIRONMENT_NAME:-}" ]]; then
+    # Packages come from the locked pixi environment. These steps are the
+    # pieces that are not conda/pip packages: Homebrew OpenMP, BLIS,
+    # FlexiBLAS, and the nightly wheels.
+    if [[ "$UNAMESTR" == "Darwin" && "$INSTALL_LIBOMP" == "homebrew" ]]; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install libomp
+
+        # enable OpenMP support for Apple-clang
+        export CC=/usr/bin/clang
+        export CPPFLAGS="$CPPFLAGS -Xpreprocessor -fopenmp"
+        export CFLAGS="$CFLAGS -I/opt/homebrew/opt/libomp/include"
+        export LDFLAGS="$LDFLAGS -Wl,-rpath,/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -lomp"
+    fi
+
+    if [[ "$INSTALL_BLAS" == "blis" ]]; then
+        source ./continuous_integration/install_blis.sh
+    elif [[ "$INSTALL_BLAS" == "flexiblas" ]]; then
+        source ./continuous_integration/install_flexiblas.sh
+    elif [[ "$PACKAGER" == "pip-dev" ]]; then
+        # Nightly wheels are intentionally not locked: this job exists to
+        # test the current development versions of numpy and scipy.
+        dev_anaconda_url=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+        python -m pip install --pre --upgrade --timeout=60 --extra-index $dev_anaconda_url numpy scipy
+    fi
+elif [[ "$PACKAGER" == "conda" ]]; then
     TO_INSTALL=""
     if [[ "$NO_NUMPY" != "true" ]]; then
         TO_INSTALL="$TO_INSTALL numpy scipy"
@@ -131,7 +155,9 @@ elif [[ "$INSTALL_BLAS" == "flexiblas" ]]; then
 
 fi
 
-python -m pip install -v -q -r dev-requirements.txt
+if [[ -z "${PIXI_ENVIRONMENT_NAME:-}" ]]; then
+    python -m pip install -v -q -r dev-requirements.txt
+fi
 bash ./continuous_integration/build_test_ext.sh
 
 # Check which BLAS is linked (only available on linux)

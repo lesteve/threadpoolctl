@@ -8,7 +8,10 @@ ABS_PATH=$(pwd)
 
 # build & install FlexiBLAS
 mkdir flexiblas_install
-git clone https://github.com/mpimd-csc/flexiblas.git
+# Pin a release. Cloning the default branch makes CI depend on unreleased
+# upstream changes.
+FLEXIBLAS_VERSION="v3.5.0"
+git clone --branch "$FLEXIBLAS_VERSION" --depth 1 https://github.com/mpimd-csc/flexiblas.git
 pushd flexiblas
 
 export CCACHE_DIR="${CCACHE_DIR:-$HOME/.cache/ccache}"
@@ -72,7 +75,7 @@ git submodule update --init
 
 echo "libdir=$ABS_PATH/flexiblas_install/lib/
 includedir=$ABS_PATH/flexiblas_install/include/flexiblas/
-version=3.3.1
+version=3.5.0
 extralib=-lm -lpthread -lgfortran
 Name: flexiblas
 Description: FlexiBLAS - a BLAS wrapper

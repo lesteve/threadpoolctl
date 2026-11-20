@@ -2,7 +2,9 @@
 
 set -xe
 
-if [[ "$PACKAGER" == conda* ]] || [[ -z "$PACKAGER" ]]; then
+if [[ -n "${PIXI_ENVIRONMENT_NAME:-}" ]]; then
+    pixi list
+elif [[ "$PACKAGER" == conda* ]] || [[ -z "$PACKAGER" ]]; then
     source "$CONDA/etc/profile.d/conda.sh"
     conda activate testenv
     conda list
