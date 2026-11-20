@@ -8,7 +8,11 @@ ABS_PATH=$(pwd)
 
 # build & install FlexiBLAS
 mkdir flexiblas_install
-git clone https://github.com/mpimd-csc/flexiblas.git
+# Pin a release. Cloning the default branch makes CI depend on unreleased
+# upstream changes. v3.5.0 reads the default backend from FLEXIBLAS_DEFAULT;
+# the default branch renamed it to FLEXIBLAS_DEFAULT_BLAS.
+FLEXIBLAS_VERSION="v3.5.0"
+git clone --branch "$FLEXIBLAS_VERSION" --depth 1 https://github.com/mpimd-csc/flexiblas.git
 pushd flexiblas
 
 export CCACHE_DIR="${CCACHE_DIR:-$HOME/.cache/ccache}"
@@ -38,7 +42,7 @@ cmake ../ -DCMAKE_INSTALL_PREFIX=$ABS_PATH"/flexiblas_install" \
     -DCMAKE_Fortran_COMPILER_LAUNCHER=ccache \
     -DBLAS_AUTO_DETECT="OFF" \
     -DEXTRA="OPENBLAS_CONDA" \
-    -DFLEXIBLAS_DEFAULT_BLAS="OPENBLAS_CONDA" \
+    -DFLEXIBLAS_DEFAULT="OPENBLAS_CONDA" \
     -DTESTS=OFF \
     -DOPENBLAS_CONDA_LIBRARY=$CONDA_PREFIX"/lib/libopenblas"$EXTENSION
 
@@ -72,7 +76,7 @@ git submodule update --init
 
 echo "libdir=$ABS_PATH/flexiblas_install/lib/
 includedir=$ABS_PATH/flexiblas_install/include/flexiblas/
-version=3.3.1
+version=3.5.0
 extralib=-lm -lpthread -lgfortran
 Name: flexiblas
 Description: FlexiBLAS - a BLAS wrapper

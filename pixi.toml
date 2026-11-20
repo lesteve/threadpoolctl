@@ -1,0 +1,174 @@
+# CI environments. Each environment corresponds to one job in
+# .github/workflows/test.yml and is solved only for the platform that job
+# runs on. `default` is the lint environment: pixi always records a default
+# environment, and an empty one would not be used by CI.
+#
+# The two Ubuntu 22.04 jobs install distro packages and are not listed here.
+
+[workspace]
+channels = []
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.linux]
+platforms = ["linux-64"]
+
+[feature.macos]
+platforms = ["osx-arm64"]
+
+[feature.win]
+platforms = ["win-64"]
+
+[feature.conda-forge]
+channels = ["conda-forge"]
+
+# `defaults` is the Anaconda main channel, ahead of conda-forge, matching
+# `conda config --add channels defaults` on a Miniforge base.
+[feature.defaults]
+channels = [
+  "https://repo.anaconda.com/pkgs/main",
+  "https://repo.anaconda.com/pkgs/r",
+  "conda-forge",
+]
+
+[feature.defaults-win]
+platforms = ["win-64"]
+channels = [
+  "https://repo.anaconda.com/pkgs/main",
+  "https://repo.anaconda.com/pkgs/r",
+  "https://repo.anaconda.com/pkgs/msys2",
+  "conda-forge",
+]
+
+# Python RC builds depend on _python_rc, which is published on this label.
+# Keep the label below conda-forge so the interpreter still comes from main
+# when it is available there.
+[feature.python-rc]
+channels = ["conda-forge", "conda-forge/label/python_rc"]
+
+[feature.ci.pypi-dependencies]
+flit = "*"
+coverage = "*"
+psutil = "*"
+pytest = "*"
+pytest-cov = "*"
+cython = "*"
+setuptools = "*"
+
+[feature.ci.tasks]
+install = "bash continuous_integration/install.sh"
+test = { cmd = "bash continuous_integration/run_tests.sh", depends-on = ["install"] }
+
+# The conda CLI used to come from the Miniconda base install, not from the
+# test environment. test_conda_blas_detection_after_import shells out to
+# `conda list`. It is added only where that package exists for the same
+# Python the job already installs. The defaults `python = "*"` jobs are
+# excluded: Anaconda's conda build would pull those jobs back to Python 3.14.
+[feature.conda-cli.dependencies]
+conda = "*"
+
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py314.dependencies]
+python = "3.14.*"
+
+[feature.pylatest.dependencies]
+python = "*"
+python-gil = "*"
+
+[feature.py315.dependencies]
+python = "3.15.*"
+python-gil = "*"
+
+[feature.py314-freethreading.dependencies]
+python-freethreading = "3.14.*"
+
+[feature.py315-freethreading.dependencies]
+python-freethreading = "3.15.*"
+
+[feature.numpy-scipy.dependencies]
+numpy = "*"
+scipy = "*"
+
+[feature.opencv.dependencies]
+opencv = "*"
+
+[feature.blas-mkl.dependencies]
+blas = { version = "*", build = "mkl" }
+
+[feature.blas-openblas.dependencies]
+blas = { version = "*", build = "openblas" }
+
+[feature.openblas-openmp.dependencies]
+libopenblas = { version = "*", build = "*openmp*" }
+
+[feature.osx-openmp.dependencies]
+compilers = "*"
+llvm-openmp = "*"
+
+[feature.flexiblas-build.dependencies]
+ccache = "*"
+openblas = "*"
+meson-python = "*"
+pkg-config = "*"
+compilers = "*"
+
+[feature.flexiblas-macos.dependencies]
+llvm-openmp = "*"
+
+[feature.flexiblas-linux.dependencies]
+mkl = "*"
+
+[feature.blis-build.dependencies]
+meson-python = "*"
+pkg-config = "*"
+
+[feature.pip-numpy-scipy.pypi-dependencies]
+numpy = "*"
+scipy = "*"
+
+[feature.pip-opencv.pypi-dependencies]
+opencv-python = "*"
+
+[feature.lint]
+platforms = ["linux-64"]
+channels = ["conda-forge"]
+
+[feature.lint.dependencies]
+python = "3.14.*"
+
+[feature.lint.pypi-dependencies]
+pre-commit = "==4.6.2"
+
+[feature.lint.tasks]
+lint = { cmd = "pre-commit run --all-files --show-diff-on-failure", default-environment = "default" }
+
+[environments]
+default = { features = ["lint"], no-default-feature = true }
+pylatest-conda-forge-mkl = { features = ["ci", "win", "conda-forge", "py314", "numpy-scipy", "opencv", "blas-mkl", "conda-cli"], no-default-feature = true }
+pylatest-conda-forge-openblas = { features = ["ci", "win", "conda-forge", "py314", "numpy-scipy", "opencv", "blas-openblas", "conda-cli"], no-default-feature = true }
+py311-conda = { features = ["ci", "defaults-win", "py311", "numpy-scipy", "opencv", "conda-cli"], no-default-feature = true }
+py310-pip = { features = ["ci", "win", "conda-forge", "py310", "pip-numpy-scipy", "pip-opencv"], no-default-feature = true }
+py310-conda-homebrew-libomp = { features = ["ci", "macos", "defaults", "py310", "numpy-scipy", "opencv", "blas-openblas", "conda-cli"], no-default-feature = true }
+pylatest-conda-forge-clang-openblas = { features = ["ci", "macos", "conda-forge", "pylatest", "numpy-scipy", "opencv", "blas-openblas", "osx-openmp", "conda-cli"], no-default-feature = true }
+macos-pylatest-flexiblas = { features = ["ci", "macos", "conda-forge", "pylatest", "flexiblas-build", "flexiblas-macos"], no-default-feature = true }
+pylatest-pip-dev = { features = ["ci", "linux", "conda-forge", "pylatest"], no-default-feature = true }
+py310-conda-openblas-clang-clang = { features = ["ci", "linux", "defaults", "py310", "numpy-scipy", "opencv", "blas-openblas", "conda-cli"], no-default-feature = true }
+pylatest-conda-mkl-clang-gcc = { features = ["ci", "linux", "defaults", "pylatest", "numpy-scipy", "blas-mkl"], no-default-feature = true }
+pylatest-conda-mkl-gcc-gcc = { features = ["ci", "linux", "defaults", "pylatest", "numpy-scipy", "opencv", "blas-mkl"], no-default-feature = true }
+py311-pip-openblas-gcc-clang = { features = ["ci", "linux", "conda-forge", "py311", "pip-numpy-scipy"], no-default-feature = true }
+pyrc-pip = { features = ["ci", "linux", "python-rc", "py315", "pip-numpy-scipy"], no-default-feature = true }
+pyrc-ft-pip = { features = ["ci", "linux", "python-rc", "py315-freethreading", "pip-numpy-scipy"], no-default-feature = true }
+pylatest-conda-forge = { features = ["ci", "linux", "conda-forge", "pylatest", "numpy-scipy", "opencv", "blas-openblas", "openblas-openmp", "conda-cli"], no-default-feature = true }
+pylatest-conda-nonumpy-gcc-clang = { features = ["ci", "linux", "defaults", "pylatest"], no-default-feature = true }
+pylatest-blis-gcc-clang-openmp = { features = ["ci", "linux", "conda-forge", "pylatest", "blis-build"], no-default-feature = true }
+pylatest-blis-clang-gcc-pthreads = { features = ["ci", "linux", "conda-forge", "pylatest", "blis-build"], no-default-feature = true }
+pylatest-blis-no-threading = { features = ["ci", "linux", "conda-forge", "pylatest", "blis-build"], no-default-feature = true }
+linux-pylatest-flexiblas = { features = ["ci", "linux", "conda-forge", "pylatest", "flexiblas-build", "flexiblas-linux"], no-default-feature = true }
+# No conda CLI here: conda has no free-threaded build, and this job's
+# interpreter is python-freethreading.
+py314-freethreaded-pip-openblas = { features = ["ci", "linux", "conda-forge", "py314-freethreading", "numpy-scipy", "blas-openblas"], no-default-feature = true }
+ubuntu24-04 = { features = ["ci", "linux", "conda-forge", "py314", "numpy-scipy", "blas-openblas", "conda-cli"], no-default-feature = true }

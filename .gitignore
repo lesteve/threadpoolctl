@@ -21,6 +21,7 @@ dist
 
 # Developer tools
 .vscode
+.pixi/
 
 # pytest
 .pytest_cache
